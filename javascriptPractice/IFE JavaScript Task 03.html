@@ -75,7 +75,9 @@
             data.map(function (item, index) {
                 var li = document.createElement("li");
                 li.appendChild(document.createTextNode('第'+ numMap[index + 1] +'名：' + item[0] + '空气质量：'));
-                li.appendChild(document.createElement('b').appendChild(document.createTextNode(item[1])));
+                var b = document.createElement('b');
+                b.appendChild(document.createTextNode(item[1]));
+                li.appendChild(b);
                 resort.appendChild(li);
             })
         }
