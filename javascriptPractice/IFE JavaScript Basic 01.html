@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>IFE JavaScript Basic 01</title>
+    <link href="https://fonts.googleapis.com/earlyaccess/cwtexhei.css" rel="stylesheet">
+    <style>
+        html, body {
+            font-family: 'cwTeXHei', sans-serif;
+        }
+        .display {
+            display: block;
+        }
+        .disp-item {
+            display: inline-block;
+            padding: 10px;
+            margin: 4px;
+            background: #000;
+            color: #ffe300;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="operations">
+        <input type="text" id="num-input" placeholder="请输入整型数字(int)" autofocus>
+        <button id="left-in">左侧人</button>
+        <button id="right-in">右侧人</button>
+        <button id="left-out">左侧出</button>
+        <button id="right-out">右侧出</button>
+    </div>
+
+    <div class="display" id="disp"></div>
+
+</div>
+
+<script>
+    (function() {
+        function displayResult(que) {
+            var disp = document.getElementById('disp');
+            var resultHTMLString = '';
+            que.map(function (item) {
+                resultHTMLString += '<div class="disp-item">' + item + '</div>'
+            });
+            disp.innerHTML = resultHTMLString;
+        }
+        function finishInput() {
+            var numInput = document.getElementById('num-input');
+            numInput.value = '';
+            numInput.focus();
+        }
+        function validInput(input) {
+            return input.match(/^[0-9]+$/);
+        }
+        var que = [];
+        var inputVal;
+        document.getElementById('left-in').onclick = function () {
+            inputVal = document.getElementById('num-input').value;
+            if (validInput(inputVal)) {
+                que.unshift(inputVal);
+                displayResult(que);
+            }
+            finishInput()
+        };
+        document.getElementById('right-in').onclick = function () {
+            inputVal = document.getElementById('num-input').value;
+            if (validInput(inputVal)) {
+                que.push(inputVal);
+                displayResult(que);
+            }
+            finishInput()
+        };
+        document.getElementById('left-out').onclick = function () {
+            que.shift();
+            displayResult(que)
+        };
+        document.getElementById('right-out').onclick = function () {
+            que.pop();
+            displayResult(que)
+        };
+    })();
+</script>
+</body>
+</html>
