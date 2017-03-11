@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>IFE JavaScript Basic 02</title>
+    <style>
+        .display {
+            display: block;
+            width: 100%;
+        }
+        .sort-div {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="operations">
+        <input type="text" id="num-input" placeholder="请输入10-100的整型数字(int)" autofocus>
+        <button id="left-in">左侧人</button>
+        <button id="right-in">右侧人</button>
+        <button id="left-out">左侧出</button>
+        <button id="right-out">右侧出</button>
+    </div>
+
+    <div class="display" id="disp"></div>
+
+    <div class="sort-div" id="sort">
+        <select id="sortOption">
+            <option value="acc">
+                升序
+            </option>
+            <option value="dec">
+                降序
+            </option>
+        </select>
+        <button id="sort-btn">排序</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        function displayResult(que) {
+            var disp = document.getElementById('disp');
+            var queLen = que.length;
+            // margin left + right = 2%, default barWidth = 5%, total width of one bar = 5+2 = 7%
+            // this will make width of bar responsive to screen width
+            // and fit 60 bars on one horizontal line
+            var barWidth = (queLen * 7) < 100 ? 5 : (100 / queLen - 2);
+            var resultHTMLString = '';
+            que.map(function (item) {
+                resultHTMLString += '<div style="' +
+                    'display: inline-block;' +
+                    'background: #ffc715;' +
+                    'width: ' + barWidth + '%;' +
+                    'margin: 1%;' +
+                    'height: ' + item * 3 + 'px;"></div>'
+            });
+            disp.innerHTML = resultHTMLString;
+            var sortDiv = document.getElementById('sort');
+            if (que.length === 0) {
+                sortDiv.style.display = 'none';
+            } else {
+                sortDiv.style.display = 'block';
+            }
+        }
+        function finishInput() {
+            var numInput = document.getElementById('num-input');
+            numInput.value = '';
+            numInput.focus();
+        }
+        function validInput(input) {
+            return input.match(/^[0-9]+$/) && input >= 10 && input <= 100;
+        }
+        function inputFn(inputVal, que, method) {
+            if (que.length + 1 > 60) {
+                alert("超出队列最大限制(60个)")
+            } else {
+                if (validInput(inputVal)) {
+                    method === 'left' ? que.unshift(inputVal) : que.push(inputVal);
+                    displayResult(que);
+                } else {
+                    alert("请输入10-100内的数字")
+                }
+            }
+            finishInput()
+        }
+
+        var sortStateRecord = [];
+        function bubbleSort(arr, compareFn) {
+            var arrLen = arr.length;
+            for (var i = 0; i < arrLen; i++) {
+                for (var j = 0; j < arrLen - i - 1; j++) {
+                    if (compareFn(arr[j], arr[j + 1])) {
+                        var temp = arr[j];
+                        arr[j] = arr[j + 1];
+                        arr[j + 1] = temp;
+                        sortStateRecord.push(arr.slice());
+                    }
+                }
+            }
+        }
+
+        var que = [];
+        var inputVal;
+        document.getElementById('left-in').onclick = function () {
+            inputVal = document.getElementById('num-input').value;
+            inputFn(inputVal, que, 'left');
+        };
+        document.getElementById('right-in').onclick = function () {
+            inputVal = document.getElementById('num-input').value;
+            inputFn(inputVal, que, 'right');
+        };
+        document.getElementById('left-out').onclick = function () {
+            alert(que[0]);
+            que.shift();
+            displayResult(que)
+        };
+        document.getElementById('right-out').onclick = function () {
+            alert(que[que.length - 1]);
+            que.pop();
+            displayResult(que)
+        };
+        document.getElementById('sort-btn').onclick = function() {
+            var sortOption = document.getElementById('sortOption').value;
+            console.log(sortOption)
+            if (sortOption === 'acc') {
+                bubbleSort(que, function (a, b) {
+                    return a - b > 0;
+                });
+            } else if (sortOption === 'dec') {
+                bubbleSort(que, function (a, b) {
+                    return b - a > 0;
+                });
+            }
+            for(var i = 0; i < sortStateRecord.length; i++) {
+                setTimeout(function (item) {
+                    displayResult(item)
+                }, i * 100, sortStateRecord[i]);
+            }
+            sortStateRecord = [];
+        };
+
+
+    })();
+</script>
+</body>
+</html>
