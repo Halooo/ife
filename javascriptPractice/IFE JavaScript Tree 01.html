@@ -5,7 +5,7 @@
     <title>IFE JavaScript Tree 01</title>
     <style>
         .container {
-            height:700px;
+            height: 700px;
             width: 100%;
         }
         .treeChildren {
@@ -13,14 +13,32 @@
             border: 1px solid #000;
             align-items: center;
             margin: 5px;
-            height: 60%;
+            height: 80%;
             width: 100%;
+        }
+        .operate {
+            display: block;
+        }
+        .operate-item {
+            display: block;
+            margin: 10px;
         }
     </style>
 </head>
 <body>
 
 <div class="container" id="output"></div>
+<div id="operation" class="operate">
+    <div class="operate-item">
+        <label>Size of tree： <input id="size-input"></label>
+    </div>
+    <div class="operate-item">
+        <button id="pre">Pre-order Search</button>
+        <button id="in">In-order Search</button>
+        <button id="post">Post-order Search</button>
+    </div>
+
+</div>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 <script type="text/babel" data-presets="stage-3">
     (function() {
@@ -45,6 +63,28 @@
                 yield *this.search(node.left);
                 yield node.value;
                 yield *this.search(node.right);
+            }
+            *searchPre(node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node) {
+                    return;
+                }
+                yield node.value;
+                yield *this.search(node.left);
+                yield *this.search(node.right);
+            }
+            *searchPost(node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node) {
+                    return;
+                }
+                yield *this.search(node.left);
+                yield *this.search(node.right);
+                yield node.value;
             }
             push(value) {
                 const newNode = new BTNode(value);
@@ -81,41 +121,95 @@
         }
 
         // visualize tree
-        function buildTreeDisp(node, domRoot) {
-            if (node) {
-                let child = document.createElement('div');
-                child.setAttribute('class', 'treeChildren');
-                child.id = node.value;
-                buildTreeDisp(node.left, child);
-                domRoot.appendChild(child);
-                buildTreeDisp(node.right, child);
+        function buildTreeDisp(node, domRoot, order, counter) {
+            if (order === 'pre') {
+                if (node) {
+                    let child = document.createElement('div');
+                    child.setAttribute('class', 'treeChildren');
+                    child.className += ' ' + 'node-' + counter;
+
+                    domRoot.appendChild(child);
+                    buildTreeDisp(node.left, child, 'pre', counter + 1);
+                    buildTreeDisp(node.right, child, 'pre', counter + 1);
+                }
+            } else if (order === 'post') {
+                if (node) {
+                    let child = document.createElement('div');
+                    child.setAttribute('class', 'treeChildren');
+                    child.className += ' ' + 'node-' + counter;
+
+                    buildTreeDisp(node.left, child, 'post', counter + 1);
+                    buildTreeDisp(node.right, child, 'post', counter + 1);
+                    domRoot.appendChild(child);
+                }
+            } else {
+                if (node) {
+                    let child = document.createElement('div');
+                    child.setAttribute('class', 'treeChildren');
+                    child.className += ' ' + 'node-' + counter;
+
+                    buildTreeDisp(node.left, child, 'in', counter + 1);
+                    domRoot.appendChild(child);
+                    buildTreeDisp(node.right, child, 'in', counter + 1);
+
+                }
             }
 
+
         }
-        function visualizeTreeSearch(state) {
-            state.map((item) => {
-                document.getElementById(item[0]).style.color = 'red';
-            })
-        }
-        let sampleTree = new BT();
-        let arr = [];
-        let state = [];
-        const sizeOfTree = 12;
-        for (let i = 0; i <= sizeOfTree; i ++) {
-            sampleTree.push(i);
-            for (let item of sampleTree) {
-                arr.push(item)
+        let timeout = [];
+        function visualizeBTSearch(order) {
+            let sampleTree = new BT();
+            const sizeInput = document.getElementById('size-input').value;
+            const sizeOfTree = sizeInput || 6;
+            for (let i = 0; i <= sizeOfTree; i++) {
+                sampleTree.push(i);
             }
-            state.push(arr);
-            arr = [];
+            let DOMrootBTNode = document.createElement('div');
+            DOMrootBTNode.setAttribute('class', 'container');
+            buildTreeDisp(sampleTree.root, DOMrootBTNode, order, 0);
+            document.getElementById('output').appendChild(DOMrootBTNode);
+
+            for(let i = 0; i <= sizeOfTree; i++) {
+                timeout.push(
+                    setTimeout(function (x) {
+                        const nodes = document.querySelectorAll('.' + 'node-' + x);
+                        console.log(nodes)
+                        for (let i = 0; i < nodes.length; i++) {
+                            nodes[i].style.border = '2px solid #FF0000;';
+                        }
+                        if (x !== 0) {
+                            const nodesToClear = document.querySelectorAll('.' + 'node-' + (x-1));
+                            for (let i = 0; i < nodes.length; i++) {
+                                nodes[i].style.border = '1px solid #000;';
+                            }
+                        }
+                    }, i * 1000, i)
+                )
+            }
         }
 
-        let DOMrootBTNode = document.createElement('div');
-        DOMrootBTNode.setAttribute('class', 'treeChildren');
-        buildTreeDisp(sampleTree.root, DOMrootBTNode);
-        document.getElementById('output').appendChild(DOMrootBTNode);
-        console.log(state);
-        console.log(DOMrootBTNode)
+        document.getElementById('pre').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('pre')
+        };
+        document.getElementById('in').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('in')
+        };
+        document.getElementById('post').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('post')
+        }
     })();
 </script>
 </body>
