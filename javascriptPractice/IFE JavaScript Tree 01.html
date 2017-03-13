@@ -13,88 +13,110 @@
             border: 1px solid #000;
             align-items: center;
             margin: 5px;
-            height: 50%;
+            height: 60%;
             width: 100%;
         }
     </style>
 </head>
 <body>
 
-<div class="container" id="output">
-    <div id="0" class="treeChildren">
-        <div id="2" class="treeChildren"></div>
-        <div id="3" class="treeChildren"></div>
-    </div>
-    <div id="1" class="treeChildren">
-        <div id="4" class="treeChildren"></div>
-        <div id="5" class="treeChildren"></div>
-    </div>
-</div>
+<div class="container" id="output"></div>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 <script type="text/babel" data-presets="stage-3">
-    class BTNode {
-        constructor(value) {
-            this.value = value;
-            this.left = null;
-            this.right = null;
+    (function() {
+        class BTNode {
+            constructor(value) {
+                this.value = value;
+                this.numLeft = 0;
+                this.numRight = 0;
+                this.left = null;
+                this.right = null;
+            }
         }
-    }
 
-    class BT {
-        *search(node) {
-            if (node === undefined) {
-                node = this.root;
-            }
-            if (!node) {
-                return;
-            }
-            yield *this.search(node.left);
-            yield node.value;
-            yield *this.search(node.right);
-        }
-        push(value) {
-            const newNode = new BTNode(value);
-            if (!this.root) {
-                this.root = newNode;
-                return;
-            }
-            let curr = this.root;
-            while (curr) {
-                if (!curr.left) {
-                    curr.left = newNode;
-                    break;
-                } else if (curr.left) {
-                    if (!curr.right) {
-                        curr.right = newNode;
-                        break;
-                    }
-                    curr = curr.left;
+        class BT {
+            *search(node) {
+                if (node === undefined) {
+                    node = this.root;
                 }
-
+                if (!node) {
+                    return;
+                }
+                yield *this.search(node.left);
+                yield node.value;
+                yield *this.search(node.right);
+            }
+            push(value) {
+                const newNode = new BTNode(value);
+                if (!this.root) {
+                    this.root = newNode;
+                    return;
+                }
+                let curr = this.root;
+                while (curr) {
+                    if (curr.numLeft === 0) {
+                        if (!curr.left) {
+                            curr.left = newNode;
+                            curr.numLeft++;
+                            break;
+                        }
+                    } else if (curr.numRight === 0) {
+                        if (!curr.right) {
+                            curr.right = newNode;
+                            curr.numRight++;
+                            break;
+                        }
+                    } else if (curr.numLeft <= curr.numRight) {
+                        curr.numLeft++;
+                        curr = curr.left;
+                    } else {
+                        curr.numRight++;
+                        curr = curr.right;
+                    }
+                }
+            }
+            [Symbol.iterator]() {
+                return this.search();
             }
         }
-        [Symbol.iterator]() {
-            return this.search();
+
+        // visualize tree
+        function buildTreeDisp(node, domRoot) {
+            if (node) {
+                let child = document.createElement('div');
+                child.setAttribute('class', 'treeChildren');
+                child.id = node.value;
+                buildTreeDisp(node.left, child);
+                domRoot.appendChild(child);
+                buildTreeDisp(node.right, child);
+            }
+
         }
-    }
-
-
-    let sampleTree = new BT();
-    let arr = [];
-    let state = [];
-    for (let i = 0; i < 8; i ++) {
-        sampleTree.push(i);
-        for (let item of sampleTree) {
-            arr.push(item)
+        function visualizeTreeSearch(state) {
+            state.map((item) => {
+                document.getElementById(item[0]).style.color = 'red';
+            })
         }
-        state.push(arr);
-        arr = [];
-    }
-    console.log(state, sampleTree);
-    for (let item of sampleTree) {
+        let sampleTree = new BT();
+        let arr = [];
+        let state = [];
+        const sizeOfTree = 12;
+        for (let i = 0; i <= sizeOfTree; i ++) {
+            sampleTree.push(i);
+            for (let item of sampleTree) {
+                arr.push(item)
+            }
+            state.push(arr);
+            arr = [];
+        }
 
-    }
-
+        let DOMrootBTNode = document.createElement('div');
+        DOMrootBTNode.setAttribute('class', 'treeChildren');
+        buildTreeDisp(sampleTree.root, DOMrootBTNode);
+        document.getElementById('output').appendChild(DOMrootBTNode);
+        console.log(state);
+        console.log(DOMrootBTNode)
+    })();
 </script>
 </body>
 </html>
