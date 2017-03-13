@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>IFE JavaScript Tree 01</title>
+    <style>
+        .container {
+            height:700px;
+            width: 100%;
+        }
+        .treeChildren {
+            display: flex;
+            border: 1px solid #000;
+            align-items: center;
+            margin: 5px;
+            height: 50%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="output">
+    <div id="0" class="treeChildren">
+        <div id="2" class="treeChildren"></div>
+        <div id="3" class="treeChildren"></div>
+    </div>
+    <div id="1" class="treeChildren">
+        <div id="4" class="treeChildren"></div>
+        <div id="5" class="treeChildren"></div>
+    </div>
+</div>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script type="text/babel" data-presets="stage-3">
+    class BTNode {
+        constructor(value) {
+            this.value = value;
+            this.left = null;
+            this.right = null;
+        }
+    }
+
+    class BT {
+        *search(node) {
+            if (node === undefined) {
+                node = this.root;
+            }
+            if (!node) {
+                return;
+            }
+            yield *this.search(node.left);
+            yield node.value;
+            yield *this.search(node.right);
+        }
+        push(value) {
+            const newNode = new BTNode(value);
+            if (!this.root) {
+                this.root = newNode;
+                return;
+            }
+            let curr = this.root;
+            while (curr) {
+                if (!curr.left) {
+                    curr.left = newNode;
+                    break;
+                } else if (curr.left) {
+                    if (!curr.right) {
+                        curr.right = newNode;
+                        break;
+                    }
+                    curr = curr.left;
+                }
+
+            }
+        }
+        [Symbol.iterator]() {
+            return this.search();
+        }
+    }
+
+
+    let sampleTree = new BT();
+    let arr = [];
+    let state = [];
+    for (let i = 0; i < 8; i ++) {
+        sampleTree.push(i);
+        for (let item of sampleTree) {
+            arr.push(item)
+        }
+        state.push(arr);
+        arr = [];
+    }
+    console.log(state, sampleTree);
+    for (let item of sampleTree) {
+
+    }
+
+</script>
+</body>
+</html>
