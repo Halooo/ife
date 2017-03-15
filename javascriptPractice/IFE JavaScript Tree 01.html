@@ -5,7 +5,7 @@
     <title>IFE JavaScript Tree 01</title>
     <style>
         .container {
-            height: 700px;
+            height: 500px;
             width: 100%;
         }
         .treeChildren {
@@ -30,7 +30,7 @@
 <div class="container" id="output"></div>
 <div id="operation" class="operate">
     <div class="operate-item">
-        <label>Size of tree： <input id="size-input"></label>
+        <label>Size of tree： <input id="size-input" placeholder="输入元素个数(默认7)"></label>
     </div>
     <div class="operate-item">
         <button id="pre">Pre-order Search</button>
@@ -121,70 +121,57 @@
         }
 
         // visualize tree
-        function buildTreeDisp(node, domRoot, order, counter) {
-            if (order === 'pre') {
-                if (node) {
-                    let child = document.createElement('div');
-                    child.setAttribute('class', 'treeChildren');
-                    child.className += ' ' + 'node-' + counter;
+        function buildTreeDisp(node, domRoot, order) {
+            if (node) {
+                let child = document.createElement('div');
+                child.setAttribute('class', 'treeChildren');
+                child.id = node.value;
 
-                    domRoot.appendChild(child);
-                    buildTreeDisp(node.left, child, 'pre', counter + 1);
-                    buildTreeDisp(node.right, child, 'pre', counter + 1);
-                }
-            } else if (order === 'post') {
-                if (node) {
-                    let child = document.createElement('div');
-                    child.setAttribute('class', 'treeChildren');
-                    child.className += ' ' + 'node-' + counter;
-
-                    buildTreeDisp(node.left, child, 'post', counter + 1);
-                    buildTreeDisp(node.right, child, 'post', counter + 1);
-                    domRoot.appendChild(child);
-                }
-            } else {
-                if (node) {
-                    let child = document.createElement('div');
-                    child.setAttribute('class', 'treeChildren');
-                    child.className += ' ' + 'node-' + counter;
-
-                    buildTreeDisp(node.left, child, 'in', counter + 1);
-                    domRoot.appendChild(child);
-                    buildTreeDisp(node.right, child, 'in', counter + 1);
-
-                }
+                buildTreeDisp(node.left, child, 'pre');
+                domRoot.appendChild(child);
+                buildTreeDisp(node.right, child, 'pre');
             }
-
-
         }
         let timeout = [];
         function visualizeBTSearch(order) {
             let sampleTree = new BT();
             const sizeInput = document.getElementById('size-input').value;
-            const sizeOfTree = sizeInput || 6;
-            for (let i = 0; i <= sizeOfTree; i++) {
+            const sizeOfTree = sizeInput || 7;
+            // build the binary tree, push elements in
+            for (let i = 0; i < sizeOfTree; i++) {
                 sampleTree.push(i);
             }
+            // order to display
+            let state = [];
+            if (order === 'pre') {
+                for (item of sampleTree.searchPre()) {
+                    state.push(item);
+                }
+            } else if (order === 'post') {
+                for (item of sampleTree.searchPost()) {
+                    state.push(item);
+                }
+            } else {
+                for (item of sampleTree.search()) {
+                    state.push(item);
+                }
+            }
+
             let DOMrootBTNode = document.createElement('div');
             DOMrootBTNode.setAttribute('class', 'container');
-            buildTreeDisp(sampleTree.root, DOMrootBTNode, order, 0);
+            buildTreeDisp(sampleTree.root, DOMrootBTNode, order);
             document.getElementById('output').appendChild(DOMrootBTNode);
 
             for(let i = 0; i <= sizeOfTree; i++) {
+                let searchIndex = state[i];
+                let deleteIndex = i === 0 ? -1 : state[i - 1];
                 timeout.push(
-                    setTimeout(function (x) {
-                        const nodes = document.querySelectorAll('.' + 'node-' + x);
-                        console.log(nodes)
-                        for (let i = 0; i < nodes.length; i++) {
-                            nodes[i].style.border = '2px solid #FF0000;';
+                    setTimeout(function (x, y) {
+                        document.getElementById(x).setAttribute('style', 'border: 1px solid #FF8C00;');
+                        if (y !== -1) {
+                            document.getElementById(y).setAttribute('style', 'border: 1px solid #000;');
                         }
-                        if (x !== 0) {
-                            const nodesToClear = document.querySelectorAll('.' + 'node-' + (x-1));
-                            for (let i = 0; i < nodes.length; i++) {
-                                nodes[i].style.border = '1px solid #000;';
-                            }
-                        }
-                    }, i * 1000, i)
+                    }, i * 1000, searchIndex, deleteIndex)
                 )
             }
         }
