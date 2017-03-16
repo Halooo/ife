@@ -126,7 +126,7 @@
                 if (node) {
                     let child = document.createElement('div');
                     child.setAttribute('class', 'treeChildren');
-                    child.className += ' ' + 'node-' + counter;
+                    child.id = '' + counter;
 
                     domRoot.appendChild(child);
                     buildTreeDisp(node.left, child, 'pre', counter + 1);
@@ -136,7 +136,7 @@
                 if (node) {
                     let child = document.createElement('div');
                     child.setAttribute('class', 'treeChildren');
-                    child.className += ' ' + 'node-' + counter;
+                    child.id = '' + counter;
 
                     buildTreeDisp(node.left, child, 'post', counter + 1);
                     buildTreeDisp(node.right, child, 'post', counter + 1);
@@ -146,7 +146,7 @@
                 if (node) {
                     let child = document.createElement('div');
                     child.setAttribute('class', 'treeChildren');
-                    child.className += ' ' + 'node-' + counter;
+                    child.id = '' + counter;
 
                     buildTreeDisp(node.left, child, 'in', counter + 1);
                     domRoot.appendChild(child);
@@ -173,13 +173,13 @@
             for(let i = 0; i <= sizeOfTree; i++) {
                 timeout.push(
                     setTimeout(function (x) {
-                        const nodes = document.querySelectorAll('.' + 'node-' + x);
+                        const nodes = document.querySelectorAll('.' + x);
                         console.log(nodes)
                         for (let i = 0; i < nodes.length; i++) {
                             nodes[i].style.border = '2px solid #FF0000;';
                         }
                         if (x !== 0) {
-                            const nodesToClear = document.querySelectorAll('.' + 'node-' + (x-1));
+                            const nodesToClear = document.querySelectorAll('.' + (x-1));
                             for (let i = 0; i < nodes.length; i++) {
                                 nodes[i].style.border = '1px solid #000;';
                             }
