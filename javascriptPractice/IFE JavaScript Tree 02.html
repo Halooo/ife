@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>IFE JavaScript Tree 02</title>
+    <style>
+        .container {
+            height: 500px;
+            width: 100%;
+        }
+        .treeChildren {
+            display: flex;
+            border: 1px solid #000;
+            align-items: center;
+            margin: 5px;
+            height: 80%;
+            width: 100%;
+        }
+        .operate {
+            display: block;
+        }
+        .operate-item {
+            display: block;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="output"></div>
+<div id="operation" class="operate">
+    <div class="operate-item">
+        <label>Size of tree： <input id="size-input" placeholder="输入元素个数(默认7)"></label>
+    </div>
+    <div class="operate-item">
+        <button id="pre">Pre-order Search</button>
+        <button id="in">In-order Search</button>
+        <button id="post">Post-order Search</button>
+    </div>
+
+</div>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script type="text/babel" data-presets="stage-3">
+    (function() {
+        class GTNode {
+            constructor(value) {
+                this.value = value;
+                this.children = [];
+            }
+        }
+        class GT {
+            constructor(value) {
+                this.root = new GTNode(value);
+            }
+            *traverse(node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (node.children === []) {
+                    return;
+                }
+                yield node;
+                for (let item of node.children) {
+                    yield *this.traverse(item)
+                }
+            }
+            find(value) {
+                for (let item of this) {
+                    if (item.value === value) {
+                        return item;
+                    }
+                }
+                return false;
+            }
+            addBack(value, parentVal) {
+                let newNode = new GTNode(value);
+                let parentPtr = this.find(parentVal);
+                if (parentPtr) {
+                    parentPtr.children.push(newNode);
+                } else {
+                    alert('404: Target Node Not Found!');
+                }
+
+            }
+            addFront(value, parentVal) {
+                let newNode = new GTNode(value);
+                let parentPtr = this.find(parentVal);
+                if (parentPtr) {
+                    parentPtr.children.unshift(newNode);
+                } else {
+                    alert('404: Target Node Not Found!');
+                }
+            }
+            [Symbol.iterator]() {
+                return this.traverse();
+            }
+        }
+
+        // visualize tree
+        let treeSample = new GT(0);
+        let node1 = new GTNode(1);
+        let node2 = new GTNode(2);
+        let node3 = new GTNode(3);
+        treeSample.root.children = [node1, node2];
+        treeSample.root.children[0].children = [node3];
+        treeSample.addBack(4, 8);
+        console.log(treeSample);
+    })();
+</script>
+</body>
+</html>
