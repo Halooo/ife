@@ -29,10 +29,12 @@
 <body>
 
 <div class="container" id="output"></div>
+
 <div id="operation" class="operate">
     <div class="operate-item">
-        <label>Default Tree 默认树 (WOW Race): </label>
+        <label>Default Tree 默认树 (WOW Race): <input id="find-value" placeholder="search keyword 搜索关键字"></label>
         <button class="operate-item" id="search">Depth-First Search (default tree) 搜索默认树</button>
+        <button class="operate-item" id="search-tree">Depth-First Search (Custom Tree) 搜索自定义树</button>
     </div>
     <div class="operate-item">
         <label>Customize Tree 自定义树: </label>
@@ -41,7 +43,6 @@
             <input id="target-input" placeholder="输入父节点(留空则为根节点)">
         </label>
         <button class="operate-item" id="create-node">Create Node 添加节点</button>
-        <button class="operate-item" id="search-tree">Depth-First Search (Custom Tree) 搜索自定义树</button>
     </div>
 </div>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
@@ -119,7 +120,6 @@
         }
         /************* tree structure module end ************/
 
-
         /************* Data View************/
         // create a sample tree (sample data)
         let sampleTree = new GT("WOW Races");
@@ -163,18 +163,23 @@
         let timeout = [];
         function visualizeGTSearch(tree) {
             const sizeOfTree = tree.size;
+            const searchValue = document.getElementById('find-value').value;
             // order to display
             let state = [];
             for (let item of tree) {
                 state.push(item);
             }
 
-            for(let i = 0; i <= sizeOfTree; i++) {
+            for(let i = 0; i <= sizeOfTree + 1; i++) {
                 let searchIndex = state[i];
                 let deleteIndex = i === 0 ? -1 : state[i - 1];
                 timeout.push(
                     setTimeout(function (x, y) {
-                        document.getElementById(x.value).setAttribute('style', 'background-color: #C1EEFF;');
+                        if (x.value === searchValue) {
+                            document.getElementById(x.value).setAttribute('style', 'background-color: #FFE300;');
+                        } else {
+                            document.getElementById(x.value).setAttribute('style', 'background-color: #C1EEFF;');
+                        }
                         if (y !== -1) {
                             document.getElementById(y.value).setAttribute('style', 'background-color: #fff;');
                         }
@@ -224,7 +229,7 @@
                 visualizeGTSearch(tree);
             }
         };
-        /************* Control end************/
+        /************* Control end ************/
     })();
 </script>
 </body>
