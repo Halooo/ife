@@ -144,15 +144,15 @@
             // order to display
             let state = [];
             if (order === 'pre') {
-                for (item of sampleTree.searchPre()) {
+                for (let item of sampleTree.searchPre()) {
                     state.push(item);
                 }
             } else if (order === 'post') {
-                for (item of sampleTree.searchPost()) {
+                for (let item of sampleTree.searchPost()) {
                     state.push(item);
                 }
             } else {
-                for (item of sampleTree.search()) {
+                for (let item of sampleTree.search()) {
                     state.push(item);
                 }
             }

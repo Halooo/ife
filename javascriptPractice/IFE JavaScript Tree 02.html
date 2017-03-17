@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>IFE JavaScript Tree 02</title>
     <style>
-        .container {
+        .container, .custom-container {
             height: 500px;
             width: 100%;
         }
@@ -15,6 +15,7 @@
             margin: 5px;
             height: 80%;
             width: 100%;
+            background: #fff;
         }
         .operate {
             display: block;
@@ -30,18 +31,23 @@
 <div class="container" id="output"></div>
 <div id="operation" class="operate">
     <div class="operate-item">
-        <label>Size of tree： <input id="size-input" placeholder="输入元素个数(默认7)"></label>
+        <label>Default Tree 默认树 (WOW Race): </label>
+        <button class="operate-item" id="search">Depth-First Search (default tree) 搜索默认树</button>
     </div>
     <div class="operate-item">
-        <button id="pre">Pre-order Search</button>
-        <button id="in">In-order Search</button>
-        <button id="post">Post-order Search</button>
+        <label>Customize Tree 自定义树: </label>
+        <label class="operate-item">Value 数值: <input id="value-input" placeholder="输入节点数据，逗号隔开"></label>
+        <label class="operate-item">Target Node(leave empty for root) <br> 目标父节点:
+            <input id="target-input" placeholder="输入父节点(留空则为根节点)">
+        </label>
+        <button class="operate-item" id="create-node">Create Node 添加节点</button>
+        <button class="operate-item" id="search-tree">Depth-First Search (Custom Tree) 搜索自定义树</button>
     </div>
-
 </div>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 <script type="text/babel" data-presets="stage-3">
     (function() {
+        /************* tree structure module ************/
         class GTNode {
             constructor(value) {
                 this.value = value;
@@ -51,6 +57,7 @@
         class GT {
             constructor(value) {
                 this.root = new GTNode(value);
+                this.size = 0;
             }
             *traverse(node) {
                 if (node === undefined) {
@@ -77,6 +84,7 @@
                 let parentPtr = this.find(parentVal);
                 if (parentPtr) {
                     parentPtr.children.push(newNode);
+                    this.size++;
                 } else {
                     alert('404: Target Node Not Found!');
                 }
@@ -87,6 +95,20 @@
                 let parentPtr = this.find(parentVal);
                 if (parentPtr) {
                     parentPtr.children.unshift(newNode);
+                    this.size++;
+                } else {
+                    alert('404: Target Node Not Found!');
+                }
+            }
+            addChildren(children, parentVal) {
+                let childrenNodes = [];
+                children.forEach((item) => {
+                    childrenNodes.push(new GTNode(item));
+                });
+                let parentPtr = this.find(parentVal);
+                if (parentPtr) {
+                    parentPtr.children = [...parentPtr.children, ...childrenNodes];
+                    this.size += children.length;
                 } else {
                     alert('404: Target Node Not Found!');
                 }
@@ -95,16 +117,114 @@
                 return this.traverse();
             }
         }
+        /************* tree structure module end ************/
 
-        // visualize tree
-        let treeSample = new GT(0);
-        let node1 = new GTNode(1);
-        let node2 = new GTNode(2);
-        let node3 = new GTNode(3);
-        treeSample.root.children = [node1, node2];
-        treeSample.root.children[0].children = [node3];
-        treeSample.addBack(4, 8);
-        console.log(treeSample);
+
+        /************* Data View************/
+        // create a sample tree (sample data)
+        let sampleTree = new GT("WOW Races");
+        sampleTree.addChildren(["Alliance", "Horde", "Neutral"], "WOW Races");
+        sampleTree.addChildren(["Dwarf", "Human", "Gnome", "Elf", "Worgen", "Draenei"], "Alliance");
+        sampleTree.addChildren(["Orc", "Blood Elf", "Goblin", "Troll", "Tauren", "Forsaken"], "Horde");
+        sampleTree.addBack("Night Elf", "Elf");
+        sampleTree.addFront("High Elf", "Elf");
+        sampleTree.addBack("Dryads", "Night Elf");
+        sampleTree.addFront("Pandaren", "Neutral");
+
+        // build tree and display tree in DOM
+        function buildTreeDisp(node, domRoot) {
+            if (node) {
+                let child = document.createElement('div');
+                child.setAttribute('class', 'treeChildren');
+                child.id = child.innerText = node.value;
+
+                domRoot.appendChild(child);
+                for (let item of node.children) {
+                    buildTreeDisp(item, child);
+                }
+            }
+        }
+        let DOMrootBTNode = document.createElement('div');
+        DOMrootBTNode.setAttribute('class', 'container');
+        DOMrootBTNode.id = "container";
+        buildTreeDisp(sampleTree.root, DOMrootBTNode);
+        document.getElementById('output').appendChild(DOMrootBTNode);
+
+        // refresh tree display
+        function refreshNode(treeName) {
+            let DOMrootBTNode = document.createElement('div');
+            DOMrootBTNode.setAttribute('class', 'container');
+            DOMrootBTNode.id = "container";
+            buildTreeDisp(treeName.root, DOMrootBTNode);
+            document.getElementById('output').replaceChild(DOMrootBTNode, document.getElementById('container'));
+        }
+
+        // visualize tree search (depth-first)
+        let timeout = [];
+        function visualizeGTSearch(tree) {
+            const sizeOfTree = tree.size;
+            // order to display
+            let state = [];
+            for (let item of tree) {
+                state.push(item);
+            }
+
+            for(let i = 0; i <= sizeOfTree; i++) {
+                let searchIndex = state[i];
+                let deleteIndex = i === 0 ? -1 : state[i - 1];
+                timeout.push(
+                    setTimeout(function (x, y) {
+                        document.getElementById(x.value).setAttribute('style', 'background-color: #C1EEFF;');
+                        if (y !== -1) {
+                            document.getElementById(y.value).setAttribute('style', 'background-color: #fff;');
+                        }
+                    }, i * 1000, searchIndex, deleteIndex)
+                )
+            }
+        }
+        /************* Data View end************/
+
+
+        /************* Control ************/
+        // default tree search
+        document.getElementById('search').onclick = () => {
+            refreshNode(sampleTree);
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            visualizeGTSearch(sampleTree);
+        };
+
+        // custom tree
+        let tree;
+        document.getElementById('create-node').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            const nodeValue = document.getElementById('value-input').value;
+            if (!nodeValue) {
+                alert('Please enter "Value" for node');
+            } else {
+                const targetValue = document.getElementById('target-input').value;
+                if (!targetValue) {
+                    tree = new GT(nodeValue);
+                } else {
+                    const valueArr = nodeValue.split(/,|，/);
+                    tree.addChildren(valueArr, targetValue);
+                }
+                refreshNode(tree);
+            }
+        };
+        document.getElementById('search-tree').onclick = () => {
+            if (tree) {
+                refreshNode(tree);
+                timeout.forEach((item) => {
+                    clearTimeout(item);
+                });
+                visualizeGTSearch(tree);
+            }
+        };
+        /************* Control end************/
     })();
 </script>
 </body>
