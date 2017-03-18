@@ -31,6 +31,8 @@
 <div class="container" id="output"></div>
 
 <div id="operation" class="operate">
+    <div>Note: This implementation of general tree have values as keys, which values are unique</div>
+    <div>注：本多叉树的值即是键，其 value 为唯一</div>
     <div class="operate-item">
         <label>Default Tree 默认树 (WOW Race): <input id="find-value" placeholder="search keyword 搜索关键字"></label>
         <button class="operate-item" id="search">Depth-First Search (default tree) 搜索默认树</button>
@@ -171,16 +173,21 @@
             }
 
             for(let i = 0; i <= sizeOfTree + 1; i++) {
-                let searchIndex = state[i];
+                let searchIndex;
+                if (state[i]) {
+                    searchIndex = state[i];
+                }
                 let deleteIndex = i === 0 ? -1 : state[i - 1];
                 timeout.push(
                     setTimeout(function (x, y) {
-                        if (x.value === searchValue) {
-                            document.getElementById(x.value).setAttribute('style', 'background-color: #FFE300;');
-                        } else {
-                            document.getElementById(x.value).setAttribute('style', 'background-color: #C1EEFF;');
+                        if (x) {
+                            if (x.value === searchValue) {
+                                document.getElementById(x.value).setAttribute('style', 'background-color: #FFE300;');
+                            } else {
+                                document.getElementById(x.value).setAttribute('style', 'background-color: #C1EEFF;');
+                            }
                         }
-                        if (y !== -1) {
+                        if (y !== -1 && y.value !== searchValue) {
                             document.getElementById(y.value).setAttribute('style', 'background-color: #fff;');
                         }
                     }, i * 1000, searchIndex, deleteIndex)
