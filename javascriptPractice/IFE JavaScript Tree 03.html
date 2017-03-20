@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>IFE JavaScript Tree 01</title>
+    <style>
+        .container {
+            height: 500px;
+            width: 100%;
+        }
+        .treeChildren {
+            display: flex;
+            border: 1px solid #000;
+            align-items: center;
+            margin: 5px;
+            height: 80%;
+            width: 100%;
+        }
+        .operate {
+            display: block;
+        }
+        .operate-item {
+            display: block;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="output"></div>
+<div id="operation" class="operate">
+    <div class="operate-item">
+        <label>Size of tree： <input id="size-input" placeholder="输入元素个数(默认7)"></label>
+    </div>
+    <div class="operate-item">
+        <button id="pre">Pre-order Search</button>
+        <button id="in">In-order Search</button>
+        <button id="post">Post-order Search</button>
+    </div>
+
+</div>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script type="text/babel" data-presets="stage-3">
+    (function() {
+        const RED = 'RED', BLACK = 'BLACK';
+        class RBTNode {
+            constructor(key, parent, value) {
+                this._color = key === null ? BLACK : RED;
+                this.key = key;
+                this.value = value || '';
+                this.parent = parent;
+                this.left = null;
+                this.right = null;
+            }
+            getLeft () {
+                if (!this.left) {
+                    this.left = new RBTNode(null, this);
+                }
+                return this.left;
+            };
+            getRight () {
+                if (!this.right) {
+                    this.right = new RBTNode(null, this);
+                }
+                return this.right;
+            };
+            isNull () {
+                return this.key === null;
+            }
+        }
+
+        class BST {
+            constructor () {
+                this._nil = new RBTNode(null);
+                this.root = new RBTNode(null);
+                this.root.parent = this._nil;
+                this.root.left = this._nil;
+                this.root.right = this._nil;
+            }
+            *search (node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node.key) {
+                    return;
+                }
+                yield *this.search(node.left);
+                yield node.value;
+                yield *this.search(node.right);
+            }
+            *searchPre (node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node.key) {
+                    return;
+                }
+                yield node.value;
+                yield *this.search(node.left);
+                yield *this.search(node.right);
+            }
+            *searchPost (node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node.key) {
+                    return;
+                }
+                yield *this.search(node.left);
+                yield *this.search(node.right);
+                yield node.value;
+            }
+            insert (node) {
+                node.parent = this._nil;
+                node.left = this._nil;
+                node.right = this._nil;
+                node._color = RED;
+                let curr = this.root;
+                let currParent = this._nil;
+                while (curr.key) {
+                    currParent = curr;
+                    node.key < curr.key ? curr = curr.left : curr = curr.right;
+                }
+                node.parent = currParent;
+                if (currParent.key === null) {
+                    this.root = node;
+                } else {
+                    node.key < currParent.key ? currParent.left = node : currParent.right = node;
+                }
+                return node;
+            }
+            [Symbol.iterator]() {
+                return this.search();
+            }
+        }
+
+
+        class RBST extends BST{
+            constructor () {
+                super();
+            }
+            /*
+             *     node                                toRotate
+             *    /    \                               /     \
+             *   a  toRotate   -> _lRotate(node) ->   node    c
+             *        / \                            /   \
+             *       b   c                          a    b
+             */
+            _lRotate (node) {
+                let toRotate = node.getRight();
+                node.right = toRotate.getLeft();
+                if (toRotate.getLeft().key !== null) {
+                    toRotate.getLeft().parent = node;
+                }
+                toRotate.parent = node.parent;
+                if (!node.parent) {
+                    this.root = toRotate;
+                } else {
+                    if (node === node.parent.getLeft()) {
+                        node.parent.left = toRotate;
+                    } else {
+                        node.parent.right = toRotate;
+                    }
+                }
+                toRotate.left = node;
+                node.parent = toRotate;
+            };
+            /*
+             *         node                                toRotate
+             *        /    \                               /     \
+             *   toRotate   c    -> _rRotate(node) ->     a     node
+             *     /   \                                       /   \
+             *    a     b                                     b     c
+             */
+            _rRotate (node) {
+                let toRotate = node.getLeft();
+                node.left = toRotate.getRight();
+                if (toRotate.getRight().key !== null) {
+                    toRotate.getRight().parent = node;
+                }
+                toRotate.parent = node.parent;
+                if (!node.parent) {
+                    this.root = toRotate;
+                } else {
+                    if (node === node.parent.getLeft()) {
+                        node.parent.left = toRotate;
+                    } else {
+                        node.parent.right = toRotate;
+                    }
+                }
+                toRotate.right = node;
+                node.parent = toRotate;
+            };
+
+            RBInsert (node) {
+                let nodeInserted = this.insert(node);
+                while (nodeInserted.parent && nodeInserted.parent.parent && nodeInserted.parent._color === RED) {
+                    let uncle = this._nil; // y
+                    if (nodeInserted.parent === nodeInserted.parent.parent.getLeft()) {
+                        uncle = nodeInserted.parent.parent.getRight();
+                        if (uncle._color === RED) {
+                            nodeInserted.parent._color = BLACK;
+                            uncle._color = BLACK;
+                            nodeInserted = nodeInserted.parent.parent;
+                            nodeInserted._color = RED;
+                        } else {
+                            if (nodeInserted === nodeInserted.parent.getRight()) {
+                                nodeInserted = nodeInserted.parent;
+                                this._lRotate(nodeInserted);
+                            }
+                            nodeInserted.parent._color = BLACK;
+                            nodeInserted.parent.parent._color = RED;
+                            this._rRotate(nodeInserted.parent.parent);
+                        }
+                    } else if (nodeInserted.parent === nodeInserted.parent.parent.getRight()) {
+                        uncle = nodeInserted.parent.parent.getLeft();
+                        if (uncle._color === RED) {
+                            nodeInserted.parent._color = BLACK;
+                            uncle._color = BLACK;
+                            nodeInserted = nodeInserted.parent.parent;
+                            nodeInserted._color = RED;
+                        } else {
+                            if (nodeInserted === nodeInserted.parent.getLeft()) {
+                                nodeInserted = nodeInserted.parent;
+                                this._lRotate(nodeInserted);
+                            }
+                            nodeInserted.parent._color = BLACK;
+                            nodeInserted.parent.parent._color = RED;
+                            this._rRotate(nodeInserted.parent.parent);
+                        }
+                    }
+                }
+                this.root._color = BLACK;
+            }
+        }
+
+        let tree = new RBST();
+        for (let i = 0; i < 4; i++) {
+            tree.RBInsert(new RBTNode(i, null, 'val:' + i));
+        }
+        let tree2 = new RBST();
+        for (let i = 0; i < 3; i++) {
+            tree2.RBInsert(new RBTNode(i, null, 'val:' + i));
+        }
+        console.log(tree, tree2);
+
+        // visualize tree
+        function buildTreeDisp(node, domRoot, order) {
+            if (node) {
+                let child = document.createElement('div');
+                child.setAttribute('class', 'treeChildren');
+                child.id = node.value;
+
+                buildTreeDisp(node.left, child, 'pre');
+                domRoot.appendChild(child);
+                buildTreeDisp(node.right, child, 'pre');
+            }
+        }
+        let timeout = [];
+        function visualizeBTSearch(order) {
+            let sampleTree = new RBST();
+            const sizeInput = document.getElementById('size-input').value;
+            const sizeOfTree = sizeInput || 7;
+            // build the binary tree, push elements in
+            for (let i = 0; i < sizeOfTree; i++) {
+                sampleTree.RBInsert(i);
+            }
+            // order to display
+            let state = [];
+            if (order === 'pre') {
+                for (let item of sampleTree.searchPre()) {
+                    state.RBInsert(item);
+                }
+            } else if (order === 'post') {
+                for (let item of sampleTree.searchPost()) {
+                    state.RBInsert(item);
+                }
+            } else {
+                for (let item of sampleTree.search()) {
+                    state.RBInsert(item);
+                }
+            }
+
+            let DOMrootBTNode = document.createElement('div');
+            DOMrootBTNode.setAttribute('class', 'container');
+            buildTreeDisp(sampleTree.root, DOMrootBTNode, order);
+            document.getElementById('output').appendChild(DOMrootBTNode);
+
+            for(let i = 0; i <= sizeOfTree; i++) {
+                let searchIndex = state[i];
+                let deleteIndex = i === 0 ? -1 : state[i - 1];
+                timeout.push(
+                    setTimeout(function (x, y) {
+                        document.getElementById(x).setAttribute('style', 'border: 1px solid #FF8C00;');
+                        if (y !== -1) {
+                            document.getElementById(y).setAttribute('style', 'border: 1px solid #000;');
+                        }
+                    }, i * 1000, searchIndex, deleteIndex)
+                )
+            }
+        }
+
+        document.getElementById('pre').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('pre')
+        };
+        document.getElementById('in').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('in')
+        };
+        document.getElementById('post').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('post')
+        }
+    })();
+</script>
+</body>
+</html>
