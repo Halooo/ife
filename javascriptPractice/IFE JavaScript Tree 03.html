@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>IFE JavaScript Tree 03</title>
+    <title>IFE JavaScript Tree 01</title>
     <style>
         .container {
             height: 500px;
@@ -42,87 +42,208 @@
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 <script type="text/babel" data-presets="stage-3">
     (function() {
-        class BTNode {
-            constructor(value) {
-                this.parent = null;
-                this.value = value;
-                this.numLeft = 0;
-                this.numRight = 0;
+        const RED = 'RED', BLACK = 'BLACK';
+        class RBTNode {
+            constructor(key, parent, value) {
+                this._color = key === null ? BLACK : RED;
+                this.key = key;
+                this.value = value || '';
+                this.parent = parent;
                 this.left = null;
                 this.right = null;
             }
+            getLeft () {
+                if (!this.left) {
+                    this.left = new RBTNode(null, this);
+                }
+                return this.left;
+            };
+            getRight () {
+                if (!this.right) {
+                    this.right = new RBTNode(null, this);
+                }
+                return this.right;
+            };
+            isNull () {
+                return this.key === null;
+            }
         }
 
-        class BT {
-            *search(node) {
+        class BST {
+            constructor () {
+                this._nil = new RBTNode(null);
+                this.root = new RBTNode(null);
+                this.root.parent = this._nil;
+                this.root.left = this._nil;
+                this.root.right = this._nil;
+            }
+            *search (node) {
                 if (node === undefined) {
                     node = this.root;
                 }
-                if (!node) {
+                if (!node.key) {
                     return;
                 }
                 yield *this.search(node.left);
                 yield node.value;
                 yield *this.search(node.right);
             }
-            *searchPre(node) {
+            *searchPre (node) {
                 if (node === undefined) {
                     node = this.root;
                 }
-                if (!node) {
+                if (!node.key) {
                     return;
                 }
                 yield node.value;
                 yield *this.search(node.left);
                 yield *this.search(node.right);
             }
-            *searchPost(node) {
+            *searchPost (node) {
                 if (node === undefined) {
                     node = this.root;
                 }
-                if (!node) {
+                if (!node.key) {
                     return;
                 }
                 yield *this.search(node.left);
                 yield *this.search(node.right);
                 yield node.value;
+            }
+            insert (node) {
+                node.parent = this._nil;
+                node.left = this._nil;
+                node.right = this._nil;
+                node._color = RED;
+                let curr = this.root;
+                let currParent = this._nil;
+                while (curr.key) {
+                    currParent = curr;
+                    node.key < curr.key ? curr = curr.left : curr = curr.right;
+                }
+                node.parent = currParent;
+                if (currParent.key === null) {
+                    this.root = node;
+                } else {
+                    node.key < currParent.key ? currParent.left = node : currParent.right = node;
+                }
+                return node;
             }
             [Symbol.iterator]() {
                 return this.search();
             }
         }
 
-        class BST extends BT {
-            push(value) {
-                const newNode = new BTNode(value);
-                if (!this.root) {
-                    this.root = newNode;
-                    return;
+
+        class RBST extends BST{
+            constructor () {
+                super();
+            }
+            /*
+             *     node                                toRotate
+             *    /    \                               /     \
+             *   a  toRotate   -> _lRotate(node) ->   node    c
+             *        / \                            /   \
+             *       b   c                          a    b
+             */
+            _lRotate (node) {
+                let toRotate = node.getRight();
+                node.right = toRotate.getLeft();
+                if (toRotate.getLeft().key !== null) {
+                    toRotate.getLeft().parent = node;
                 }
-                let current = this.root;
-                while (curr) {
-                    if (curr.numLeft === 0) {
-                        if (!curr.left) {
-                            curr.left = newNode;
-                            curr.numLeft++;
-                            break;
-                        }
-                    } else if (curr.numRight === 0) {
-                        if (!curr.right) {
-                            curr.right = newNode;
-                            curr.numRight++;
-                            break;
-                        }
-                    } else if (curr.numLeft <= curr.numRight) {
-                        curr.numLeft++;
-                        curr = curr.left;
+                toRotate.parent = node.parent;
+                if (!node.parent) {
+                    this.root = toRotate;
+                } else {
+                    if (node === node.parent.getLeft()) {
+                        node.parent.left = toRotate;
                     } else {
-                        curr.numRight++;
-                        curr = curr.right;
+                        node.parent.right = toRotate;
                     }
                 }
+                toRotate.left = node;
+                node.parent = toRotate;
+            };
+            /*
+             *         node                                toRotate
+             *        /    \                               /     \
+             *   toRotate   c    -> _rRotate(node) ->     a     node
+             *     /   \                                       /   \
+             *    a     b                                     b     c
+             */
+            _rRotate (node) {
+                let toRotate = node.getLeft();
+                node.left = toRotate.getRight();
+                if (toRotate.getRight().key !== null) {
+                    toRotate.getRight().parent = node;
+                }
+                toRotate.parent = node.parent;
+                if (!node.parent) {
+                    this.root = toRotate;
+                } else {
+                    if (node === node.parent.getLeft()) {
+                        node.parent.left = toRotate;
+                    } else {
+                        node.parent.right = toRotate;
+                    }
+                }
+                toRotate.right = node;
+                node.parent = toRotate;
+            };
+
+            RBInsert (node) {
+                let nodeInserted = this.insert(node);
+                while (nodeInserted.parent && nodeInserted.parent.parent && nodeInserted.parent._color === RED) {
+                    let uncle = this._nil; // y
+                    if (nodeInserted.parent === nodeInserted.parent.parent.getLeft()) {
+                        uncle = nodeInserted.parent.parent.getRight();
+                        if (uncle._color === RED) {
+                            nodeInserted.parent._color = BLACK;
+                            uncle._color = BLACK;
+                            nodeInserted = nodeInserted.parent.parent;
+                            nodeInserted._color = RED;
+                        } else {
+                            if (nodeInserted === nodeInserted.parent.getRight()) {
+                                nodeInserted = nodeInserted.parent;
+                                this._lRotate(nodeInserted);
+                            }
+                            nodeInserted.parent._color = BLACK;
+                            nodeInserted.parent.parent._color = RED;
+                            this._rRotate(nodeInserted.parent.parent);
+                        }
+                    } else if (nodeInserted.parent === nodeInserted.parent.parent.getRight()) {
+                        uncle = nodeInserted.parent.parent.getLeft();
+                        if (uncle._color === RED) {
+                            nodeInserted.parent._color = BLACK;
+                            uncle._color = BLACK;
+                            nodeInserted = nodeInserted.parent.parent;
+                            nodeInserted._color = RED;
+                        } else {
+                            if (nodeInserted === nodeInserted.parent.getLeft()) {
+                                nodeInserted = nodeInserted.parent;
+                                this._lRotate(nodeInserted);
+                            }
+                            nodeInserted.parent._color = BLACK;
+                            nodeInserted.parent.parent._color = RED;
+                            this._rRotate(nodeInserted.parent.parent);
+                        }
+                    }
+                }
+                this.root._color = BLACK;
             }
         }
+
+        let tree = new RBST();
+        for (let i = 0; i < 4; i++) {
+            tree.RBInsert(new RBTNode(i, null, 'val:' + i));
+        }
+        let tree2 = new RBST();
+        for (let i = 0; i < 3; i++) {
+            tree2.RBInsert(new RBTNode(i, null, 'val:' + i));
+        }
+        console.log(tree, tree2);
+
         // visualize tree
         function buildTreeDisp(node, domRoot, order) {
             if (node) {
@@ -137,26 +258,26 @@
         }
         let timeout = [];
         function visualizeBTSearch(order) {
-            let sampleTree = new BT();
+            let sampleTree = new RBST();
             const sizeInput = document.getElementById('size-input').value;
             const sizeOfTree = sizeInput || 7;
             // build the binary tree, push elements in
             for (let i = 0; i < sizeOfTree; i++) {
-                sampleTree.push(i);
+                sampleTree.RBInsert(i);
             }
             // order to display
             let state = [];
             if (order === 'pre') {
                 for (let item of sampleTree.searchPre()) {
-                    state.push(item);
+                    state.RBInsert(item);
                 }
             } else if (order === 'post') {
                 for (let item of sampleTree.searchPost()) {
-                    state.push(item);
+                    state.RBInsert(item);
                 }
             } else {
                 for (let item of sampleTree.search()) {
-                    state.push(item);
+                    state.RBInsert(item);
                 }
             }
 
@@ -177,9 +298,7 @@
                     }, i * 1000, searchIndex, deleteIndex)
                 )
             }
-            console.log(sampleTree)
         }
-
 
         document.getElementById('pre').onclick = () => {
             timeout.forEach((item) => {
