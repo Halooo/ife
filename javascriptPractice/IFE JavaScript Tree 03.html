@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>IFE JavaScript Tree 03</title>
+    <style>
+        .container {
+            height: 500px;
+            width: 100%;
+        }
+        .treeChildren {
+            display: flex;
+            border: 1px solid #000;
+            align-items: center;
+            margin: 5px;
+            height: 80%;
+            width: 100%;
+        }
+        .operate {
+            display: block;
+        }
+        .operate-item {
+            display: block;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="output"></div>
+<div id="operation" class="operate">
+    <div class="operate-item">
+        <label>Size of tree： <input id="size-input" placeholder="输入元素个数(默认7)"></label>
+    </div>
+    <div class="operate-item">
+        <button id="pre">Pre-order Search</button>
+        <button id="in">In-order Search</button>
+        <button id="post">Post-order Search</button>
+    </div>
+
+</div>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script type="text/babel" data-presets="stage-3">
+    (function() {
+        class BTNode {
+            constructor(value) {
+                this.parent = null;
+                this.value = value;
+                this.numLeft = 0;
+                this.numRight = 0;
+                this.left = null;
+                this.right = null;
+            }
+        }
+
+        class BT {
+            *search(node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node) {
+                    return;
+                }
+                yield *this.search(node.left);
+                yield node.value;
+                yield *this.search(node.right);
+            }
+            *searchPre(node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node) {
+                    return;
+                }
+                yield node.value;
+                yield *this.search(node.left);
+                yield *this.search(node.right);
+            }
+            *searchPost(node) {
+                if (node === undefined) {
+                    node = this.root;
+                }
+                if (!node) {
+                    return;
+                }
+                yield *this.search(node.left);
+                yield *this.search(node.right);
+                yield node.value;
+            }
+            [Symbol.iterator]() {
+                return this.search();
+            }
+        }
+
+        class BST extends BT {
+            push(value) {
+                const newNode = new BTNode(value);
+                if (!this.root) {
+                    this.root = newNode;
+                    return;
+                }
+                let current = this.root;
+                while (curr) {
+                    if (curr.numLeft === 0) {
+                        if (!curr.left) {
+                            curr.left = newNode;
+                            curr.numLeft++;
+                            break;
+                        }
+                    } else if (curr.numRight === 0) {
+                        if (!curr.right) {
+                            curr.right = newNode;
+                            curr.numRight++;
+                            break;
+                        }
+                    } else if (curr.numLeft <= curr.numRight) {
+                        curr.numLeft++;
+                        curr = curr.left;
+                    } else {
+                        curr.numRight++;
+                        curr = curr.right;
+                    }
+                }
+            }
+        }
+        // visualize tree
+        function buildTreeDisp(node, domRoot, order) {
+            if (node) {
+                let child = document.createElement('div');
+                child.setAttribute('class', 'treeChildren');
+                child.id = node.value;
+
+                buildTreeDisp(node.left, child, 'pre');
+                domRoot.appendChild(child);
+                buildTreeDisp(node.right, child, 'pre');
+            }
+        }
+        let timeout = [];
+        function visualizeBTSearch(order) {
+            let sampleTree = new BT();
+            const sizeInput = document.getElementById('size-input').value;
+            const sizeOfTree = sizeInput || 7;
+            // build the binary tree, push elements in
+            for (let i = 0; i < sizeOfTree; i++) {
+                sampleTree.push(i);
+            }
+            // order to display
+            let state = [];
+            if (order === 'pre') {
+                for (let item of sampleTree.searchPre()) {
+                    state.push(item);
+                }
+            } else if (order === 'post') {
+                for (let item of sampleTree.searchPost()) {
+                    state.push(item);
+                }
+            } else {
+                for (let item of sampleTree.search()) {
+                    state.push(item);
+                }
+            }
+
+            let DOMrootBTNode = document.createElement('div');
+            DOMrootBTNode.setAttribute('class', 'container');
+            buildTreeDisp(sampleTree.root, DOMrootBTNode, order);
+            document.getElementById('output').appendChild(DOMrootBTNode);
+
+            for(let i = 0; i <= sizeOfTree; i++) {
+                let searchIndex = state[i];
+                let deleteIndex = i === 0 ? -1 : state[i - 1];
+                timeout.push(
+                    setTimeout(function (x, y) {
+                        document.getElementById(x).setAttribute('style', 'border: 1px solid #FF8C00;');
+                        if (y !== -1) {
+                            document.getElementById(y).setAttribute('style', 'border: 1px solid #000;');
+                        }
+                    }, i * 1000, searchIndex, deleteIndex)
+                )
+            }
+            console.log(sampleTree)
+        }
+
+
+        document.getElementById('pre').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('pre')
+        };
+        document.getElementById('in').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('in')
+        };
+        document.getElementById('post').onclick = () => {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+            document.getElementById('output').innerHTML = '';
+            visualizeBTSearch('post')
+        }
+    })();
+</script>
+</body>
+</html>
