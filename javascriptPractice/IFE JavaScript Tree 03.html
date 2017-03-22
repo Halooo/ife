@@ -15,6 +15,10 @@
             margin: 5px;
             height: 80%;
             width: 100%;
+            background: #fff;
+        }
+        .treeChildrenActive {
+            border: 2px solid #ffe300;
         }
         .operate {
             display: block;
@@ -30,12 +34,26 @@
 <div class="container" id="output"></div>
 <div id="operation" class="operate">
     <div class="operate-item">
-        <label>Size of tree： <input id="size-input" placeholder="输入元素个数(默认7)"></label>
+        <label>Size of tree: <input id="size-input" placeholder="输入元素个数(默认8)"></label>
+        <button id="tree-gen">Generate Tree 生成树</button>
     </div>
     <div class="operate-item">
-        <button id="pre">Pre-order Search</button>
-        <button id="in">In-order Search</button>
-        <button id="post">Post-order Search</button>
+        Search:
+        <button id="pre">Pre-order</button>
+        <button id="in">In-order</button>
+        <button id="post">Post-order</button>
+    </div>
+    <div class="operate-item">
+        Add/Delete single node 添加/删除一个节点(自动平衡) <br>
+        <label>Key: <input id="key-input" placeholder="key"></label>
+        <label>Value: <input id="val-input" placeholder="value"></label>
+        <button id="del-btn">Delete 删除(仅需输入key)</button>
+        <button id="add-btn">Add 添加</button>
+    </div>
+    <div class="operate-item">
+        Delete branch 删除整个分支(不重新平衡) <br>
+        <label>Key: <input id="del-branch-input" placeholder="key"></label>
+        <button id="del-branch-btn">Delete 删除(仅需输入key)</button>
     </div>
 
 </div>
@@ -67,6 +85,9 @@
             isNull () {
                 return this.key === null;
             }
+            copy () {
+                return JSON.parse(JSON.stringify(this))
+            }
         }
 
         class BST {
@@ -77,6 +98,7 @@
                 this.root.left = this._nil;
                 this.root.right = this._nil;
             }
+
             *search (node) {
                 if (node === undefined) {
                     node = this.root;
@@ -85,7 +107,7 @@
                     return;
                 }
                 yield *this.search(node.left);
-                yield node.value;
+                yield node;
                 yield *this.search(node.right);
             }
             *searchPre (node) {
@@ -95,7 +117,7 @@
                 if (!node.key) {
                     return;
                 }
-                yield node.value;
+                yield node;
                 yield *this.search(node.left);
                 yield *this.search(node.right);
             }
@@ -108,26 +130,38 @@
                 }
                 yield *this.search(node.left);
                 yield *this.search(node.right);
-                yield node.value;
+                yield node;
+            }
+            find (key) {
+                for (let item of this) {
+                    if (item.key == key) {
+                        return item;
+                    }
+                }
+                return false;
             }
             insert (node) {
-                node.parent = this._nil;
-                node.left = this._nil;
-                node.right = this._nil;
-                node._color = RED;
-                let curr = this.root;
-                let currParent = this._nil;
-                while (curr.key) {
-                    currParent = curr;
-                    node.key < curr.key ? curr = curr.left : curr = curr.right;
-                }
-                node.parent = currParent;
-                if (currParent.key === null) {
-                    this.root = node;
+                if (this.find(node.key)) {
+                    return false;
                 } else {
-                    node.key < currParent.key ? currParent.left = node : currParent.right = node;
+                    node.parent = this._nil;
+                    node.left = this._nil;
+                    node.right = this._nil;
+                    node._color = RED;
+                    let curr = this.root;
+                    let currParent = this._nil;
+                    while (curr.key) {
+                        currParent = curr;
+                        node.key < curr.key ? curr = curr.left : curr = curr.right;
+                    }
+                    node.parent = currParent;
+                    if (currParent.key === null) {
+                        this.root = node;
+                    } else {
+                        node.key < currParent.key ? currParent.left = node : currParent.right = node;
+                    }
+                    return node;
                 }
-                return node;
             }
             [Symbol.iterator]() {
                 return this.search();
@@ -147,13 +181,14 @@
              *       b   c                          a    b
              */
             _lRotate (node) {
+                console.log('left rotate')
                 let toRotate = node.getRight();
                 node.right = toRotate.getLeft();
                 if (toRotate.getLeft().key !== null) {
                     toRotate.getLeft().parent = node;
                 }
                 toRotate.parent = node.parent;
-                if (!node.parent) {
+                if (!node.parent.key) {
                     this.root = toRotate;
                 } else {
                     if (node === node.parent.getLeft()) {
@@ -173,6 +208,7 @@
              *    a     b                                     b     c
              */
             _rRotate (node) {
+                console.log('right rotate')
                 let toRotate = node.getLeft();
                 node.left = toRotate.getRight();
                 if (toRotate.getRight().key !== null) {
@@ -192,134 +228,333 @@
                 node.parent = toRotate;
             };
 
-            RBInsert (node) {
+            rbInsert (node) {
                 let nodeInserted = this.insert(node);
-                while (nodeInserted.parent && nodeInserted.parent.parent && nodeInserted.parent._color === RED) {
-                    let uncle = this._nil; // y
-                    if (nodeInserted.parent === nodeInserted.parent.parent.getLeft()) {
-                        uncle = nodeInserted.parent.parent.getRight();
-                        if (uncle._color === RED) {
-                            nodeInserted.parent._color = BLACK;
-                            uncle._color = BLACK;
-                            nodeInserted = nodeInserted.parent.parent;
-                            nodeInserted._color = RED;
-                        } else {
-                            if (nodeInserted === nodeInserted.parent.getRight()) {
-                                nodeInserted = nodeInserted.parent;
-                                this._lRotate(nodeInserted);
+                if (nodeInserted) {
+                    while (nodeInserted.parent && nodeInserted.parent.parent && nodeInserted.parent._color === RED) {
+                        let uncle;
+                        if (nodeInserted.parent === nodeInserted.parent.parent.getLeft()) {
+                            uncle = nodeInserted.parent.parent.getRight();
+                            if (uncle._color === RED) {
+                                nodeInserted.parent._color = BLACK;
+                                uncle._color = BLACK;
+                                nodeInserted = nodeInserted.parent.parent;
+                                nodeInserted._color = RED;
+                            } else {
+                                if (nodeInserted === nodeInserted.parent.getRight()) {
+                                    nodeInserted = nodeInserted.parent;
+                                    this._lRotate(nodeInserted);
+                                }
+                                nodeInserted.parent._color = BLACK;
+                                nodeInserted.parent.parent._color = RED;
+                                this._rRotate(nodeInserted.parent.parent);
                             }
-                            nodeInserted.parent._color = BLACK;
-                            nodeInserted.parent.parent._color = RED;
-                            this._rRotate(nodeInserted.parent.parent);
+                        } else if (nodeInserted.parent === nodeInserted.parent.parent.getRight()) {
+                            uncle = nodeInserted.parent.parent.getLeft();
+                            if (uncle._color === RED) {
+                                nodeInserted.parent._color = BLACK;
+                                uncle._color = BLACK;
+                                nodeInserted = nodeInserted.parent.parent;
+                                nodeInserted._color = RED;
+                            } else {
+                                if (nodeInserted === nodeInserted.parent.getLeft()) {
+                                    nodeInserted = nodeInserted.parent;
+                                    this._rRotate(nodeInserted);
+                                }
+                                nodeInserted.parent._color = BLACK;
+                                nodeInserted.parent.parent._color = RED;
+                                this._lRotate(nodeInserted.parent.parent);
+                            }
                         }
-                    } else if (nodeInserted.parent === nodeInserted.parent.parent.getRight()) {
-                        uncle = nodeInserted.parent.parent.getLeft();
-                        if (uncle._color === RED) {
-                            nodeInserted.parent._color = BLACK;
-                            uncle._color = BLACK;
-                            nodeInserted = nodeInserted.parent.parent;
-                            nodeInserted._color = RED;
+                    }
+                    this.root._color = BLACK;
+                }
+            }
+
+            _transplant (del, node) {
+                if (del.parent === this._nil) {
+                    this.root = node;
+                } else if (del === del.parent.getLeft()) {
+                    del.parent.left = node;
+                } else {
+                    del.parent.right = node;
+                }
+                node.parent = del.parent;
+            }
+
+
+
+            minimum (node) {
+                while (!node.isNull() && !node.getLeft().isNull()) {
+                    node = node.getLeft();
+                }
+                return node;
+            }
+
+            rbDelete (key) {
+                let node = this.find(key);
+                let nodeHolder;
+                if (node) {
+                    let temp = node;
+                    let tempOriginalColor = temp.color;
+                    if (node.getLeft() === this._nil) {
+                        nodeHolder = node.right;
+                        this._transplant(node, node.right);
+                    } else if (node.getRight() === this._nil) {
+                        nodeHolder = node.left;
+                        this._transplant(node, node.left);
+                    } else {
+                        temp = this.minimum(node.right);
+                        tempOriginalColor = temp.color;
+                        nodeHolder = temp.right;
+                        if (temp.parent === node) {
+                            node.parent = temp;
                         } else {
-                            if (nodeInserted === nodeInserted.parent.getLeft()) {
-                                nodeInserted = nodeInserted.parent;
-                                this._lRotate(nodeInserted);
+                            this._transplant(temp, temp.right);
+                            temp.right = node.right;
+                            temp.right.parent = temp;
+                        }
+                        temp.left = node.left;
+                        temp.left.parent = temp;
+                        temp.color = node.color;
+                    }
+                    if (tempOriginalColor === BLACK) {
+                        this._rbDeleteFixup(nodeHolder);
+                    }
+                }
+
+            }
+            _rbDeleteFixup (node) {
+                while (node !== this.root && node.color === BLACK) {
+                    let sibling;
+                    if (node === node.parent.getLeft()) {
+                        sibling = node.parent.right;
+                        if (sibling.color === RED) {
+                            console.log('case1')
+                            sibling.color = BLACK;
+                            node.parent.color = RED;
+                            this._lRotate(node.parent);
+                            sibling = node.parent.right;
+                        }
+                        if (sibling.getLeft().color === BLACK && sibling.getRight().color === BLACK) {
+                            console.log('case2')
+                            sibling.color = RED;
+                            node = node.parent;
+                        } else {
+                            console.log('case3')
+                            if (sibling.color === BLACK) {
+                                sibling.left.color = BLACK;
+                                sibling.color = RED;
+                                this._rRotate(sibling);
+                                sibling = node.parent.right;
                             }
-                            nodeInserted.parent._color = BLACK;
-                            nodeInserted.parent.parent._color = RED;
-                            this._rRotate(nodeInserted.parent.parent);
+                            sibling.color = node.parent.color;
+                            node.parent.color = BLACK;
+                            this._lRotate(node.parent);
+                            node = this.root;
+                        }
+                    } else {
+                        sibling = node.parent.left;
+                        if (sibling.color === RED) {
+                            sibling.color = BLACK;
+                            node.parent.color = RED;
+                            this._rRotate(node.parent);
+                            sibling = node.parent.left;
+                        }
+                        if (sibling.right.color === BLACK && sibling.left.color === BLACK) {
+                            sibling.color = RED;
+                            node = node.parent;
+                        } else {
+                            if (sibling.color === BLACK) {
+                                sibling.right.color = BLACK;
+                                sibling.color = RED;
+                                this._lRotate(sibling);
+                                sibling = node.parent.left;
+                            }
+                            sibling.color = node.parent.color;
+                            node.parent.color = BLACK;
+                            this._rRotate(node.parent);
+                            node = this.root;
                         }
                     }
                 }
-                this.root._color = BLACK;
+                node.color = BLACK;
+            }
+            deleteBranchNoBalancing (key) {
+                let node = this.find(key);
+                console.log(node)
+                if (node.parent === this._nil) {
+                    this.root = this._nil;
+                } else {
+                    if (node.parent.getLeft() === node) {
+                        node.parent.left = this._nil;
+                    } else {
+                        node.parent.right = this._nil;
+                    }
+                }
             }
         }
 
-        let tree = new RBST();
-        for (let i = 0; i < 4; i++) {
-            tree.RBInsert(new RBTNode(i, null, 'val:' + i));
-        }
-        let tree2 = new RBST();
-        for (let i = 0; i < 3; i++) {
-            tree2.RBInsert(new RBTNode(i, null, 'val:' + i));
-        }
-        console.log(tree, tree2);
+
 
         // visualize tree
-        function buildTreeDisp(node, domRoot, order) {
+        function buildTreeDisp(node, domRoot) {
             if (node) {
-                let child = document.createElement('div');
-                child.setAttribute('class', 'treeChildren');
-                child.id = node.value;
+                if (node.key) {
+                    let child = document.createElement('div');
+                    child.setAttribute('class', 'treeChildren');
+                    child.id = node.key;
+                    child.innerText = 'key-' + node.key +': ' + node.value;
+                    child.addEventListener('click', (ev) => {
+                        let targetClass = document.getElementById(ev.target.id);
+                        if (targetClass.className === 'treeChildren') {
+                            targetClass.className += ' treeChildrenActive';
+                            document.getElementById('key-input').value += ev.target.id + ',';
+                        } else {
+                            targetClass.className = 'treeChildren';
+                            let temp = document.getElementById('key-input').value;
+                            temp = temp.replace(new RegExp(ev.target.id + ','), '');
+                            document.getElementById('key-input').value = temp;
+                        }
+                        // stop event bubbling to its parent nodes
+                        ev.stopPropagation();
+                    });
 
-                buildTreeDisp(node.left, child, 'pre');
-                domRoot.appendChild(child);
-                buildTreeDisp(node.right, child, 'pre');
+                    buildTreeDisp(node.left, child, 'pre');
+                    domRoot.appendChild(child);
+                    buildTreeDisp(node.right, child, 'pre');
+                }
             }
         }
+        function visualizeTree(tree) {
+            let DOMrootBTNode = document.createElement('div');
+            DOMrootBTNode.setAttribute('class', 'container');
+            DOMrootBTNode.id = "container";
+            buildTreeDisp(tree.root, DOMrootBTNode);
+            if (document.getElementById('container')) {
+                document.getElementById('output').replaceChild(DOMrootBTNode, document.getElementById('container'));
+            } else {
+                document.getElementById('output').appendChild(DOMrootBTNode);
+            }
+        }
+
+//        let tree = new RBST();
+//        for (let i = 0; i < 9; i++) {
+//            tree.rbInsert(new RBTNode(i, null, 'val-' + i));
+//        }
+//        console.log(tree)
+//        tree.deleteBranchNoBalancing(2)
+//        console.log(tree)
+//        visualizeTree(tree)
+
         let timeout = [];
-        function visualizeBTSearch(order) {
-            let sampleTree = new RBST();
+        function clearAllTimeout(timeout) {
+            timeout.forEach((item) => {
+                clearTimeout(item);
+            });
+        }
+        let sampleTree = new RBST();
+        // build sample tree
+        generateSampleTree();
+        function generateSampleTree() {
+            sampleTree.root = sampleTree._nil;
             const sizeInput = document.getElementById('size-input').value;
-            const sizeOfTree = sizeInput || 7;
+            const sizeOfTree =  parseInt(sizeInput) + 1 || 9;
             // build the binary tree, push elements in
             for (let i = 0; i < sizeOfTree; i++) {
-                sampleTree.RBInsert(i);
+                sampleTree.rbInsert(new RBTNode(i, null, 'val-' + i));
             }
+        }
+        function visualizeBTSearch(order) {
+            generateSampleTree();
             // order to display
             let state = [];
             if (order === 'pre') {
                 for (let item of sampleTree.searchPre()) {
-                    state.RBInsert(item);
+                    state.push(item.key);
                 }
             } else if (order === 'post') {
                 for (let item of sampleTree.searchPost()) {
-                    state.RBInsert(item);
+                    state.push(item.key);
                 }
             } else {
                 for (let item of sampleTree.search()) {
-                    state.RBInsert(item);
+                    state.push(item.key);
                 }
             }
 
-            let DOMrootBTNode = document.createElement('div');
-            DOMrootBTNode.setAttribute('class', 'container');
-            buildTreeDisp(sampleTree.root, DOMrootBTNode, order);
-            document.getElementById('output').appendChild(DOMrootBTNode);
+            visualizeTree(sampleTree);
 
-            for(let i = 0; i <= sizeOfTree; i++) {
+            for(let i = 0; i < state.length + 1; i++) {
                 let searchIndex = state[i];
                 let deleteIndex = i === 0 ? -1 : state[i - 1];
                 timeout.push(
                     setTimeout(function (x, y) {
-                        document.getElementById(x).setAttribute('style', 'border: 1px solid #FF8C00;');
-                        if (y !== -1) {
-                            document.getElementById(y).setAttribute('style', 'border: 1px solid #000;');
+                        if (x) {
+                            document.getElementById(x).setAttribute('style', 'background: #CFF7FF;');
+                        }
+                        if (y && y !== -1) {
+                            document.getElementById(y).setAttribute('style', 'background: #fff;');
                         }
                     }, i * 1000, searchIndex, deleteIndex)
                 )
             }
         }
 
+        // controls
+        visualizeTree(sampleTree);
+        document.getElementById('tree-gen').onclick = () => {
+            clearAllTimeout(timeout);
+            generateSampleTree();
+            visualizeTree(sampleTree);
+        };
         document.getElementById('pre').onclick = () => {
-            timeout.forEach((item) => {
-                clearTimeout(item);
-            });
+            clearAllTimeout(timeout);
             document.getElementById('output').innerHTML = '';
             visualizeBTSearch('pre')
         };
         document.getElementById('in').onclick = () => {
-            timeout.forEach((item) => {
-                clearTimeout(item);
-            });
+            clearAllTimeout(timeout);
             document.getElementById('output').innerHTML = '';
             visualizeBTSearch('in')
         };
         document.getElementById('post').onclick = () => {
-            timeout.forEach((item) => {
-                clearTimeout(item);
-            });
+            clearAllTimeout(timeout);
             document.getElementById('output').innerHTML = '';
             visualizeBTSearch('post')
+        };
+
+        document.getElementById('del-btn').onclick = () => {
+            clearAllTimeout(timeout);
+            const keys = document.getElementById('key-input').value.split(',');
+            for (let key of keys) {
+                if (key) {
+                    sampleTree.rbDelete(key)
+                    console.log(sampleTree)
+                }
+            }
+            visualizeTree(sampleTree);
+        };
+        document.getElementById('del-branch-btn').onclick = () => {
+            clearAllTimeout(timeout);
+            const keys = document.getElementById('del-branch-input').value.split(',');
+            for (let key of keys) {
+                if (key) {
+                    sampleTree.deleteBranchNoBalancing(key)
+                }
+            }
+            visualizeTree(sampleTree);
+        };
+        document.getElementById('add-btn').onclick = () => {
+            clearAllTimeout(timeout);
+            const keys = document.getElementById('key-input').value.split(',');
+            const vals = document.getElementById('val-input').value.split(',');
+            for (let i = 0; i < keys.length; i++) {
+                if (keys[i]) {
+                    sampleTree.rbInsert(new RBTNode(keys[i], null, vals[i] || ''));
+                }
+            }
+            visualizeTree(sampleTree);
         }
     })();
 </script>
