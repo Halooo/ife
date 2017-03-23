@@ -181,7 +181,6 @@
              *       b   c                          a    b
              */
             _lRotate (node) {
-                console.log('left rotate')
                 let toRotate = node.getRight();
                 node.right = toRotate.getLeft();
                 if (toRotate.getLeft().key !== null) {
@@ -208,7 +207,6 @@
              *    a     b                                     b     c
              */
             _rRotate (node) {
-                console.log('right rotate')
                 let toRotate = node.getLeft();
                 node.left = toRotate.getRight();
                 if (toRotate.getRight().key !== null) {
@@ -229,6 +227,7 @@
             };
 
             rbInsert (node) {
+
                 let nodeInserted = this.insert(node);
                 if (nodeInserted) {
                     while (nodeInserted.parent && nodeInserted.parent.parent && nodeInserted.parent._color === RED) {
@@ -282,8 +281,6 @@
                 node.parent = del.parent;
             }
 
-
-
             minimum (node) {
                 while (!node.isNull() && !node.getLeft().isNull()) {
                     node = node.getLeft();
@@ -308,12 +305,13 @@
                         tempOriginalColor = temp.color;
                         nodeHolder = temp.right;
                         if (temp.parent === node) {
-                            node.parent = temp;
+                            nodeHolder.parent = temp;
                         } else {
                             this._transplant(temp, temp.right);
                             temp.right = node.right;
                             temp.right.parent = temp;
                         }
+                        this._transplant(node, temp);
                         temp.left = node.left;
                         temp.left.parent = temp;
                         temp.color = node.color;
@@ -325,8 +323,8 @@
 
             }
             _rbDeleteFixup (node) {
+                let sibling;
                 while (node !== this.root && node.color === BLACK) {
-                    let sibling;
                     if (node === node.parent.getLeft()) {
                         sibling = node.parent.right;
                         if (sibling.color === RED) {
@@ -348,41 +346,45 @@
                                 this._rRotate(sibling);
                                 sibling = node.parent.right;
                             }
-                            sibling.color = node.parent.color;
-                            node.parent.color = BLACK;
-                            this._lRotate(node.parent);
-                            node = this.root;
                         }
+                        console.log('case4')
+                        sibling.color = node.parent.color;
+                        node.parent.color = BLACK;
+                        this._lRotate(node.parent);
+                        node = this.root;
                     } else {
                         sibling = node.parent.left;
                         if (sibling.color === RED) {
+                            console.log('rcase1')
                             sibling.color = BLACK;
                             node.parent.color = RED;
                             this._rRotate(node.parent);
                             sibling = node.parent.left;
                         }
                         if (sibling.right.color === BLACK && sibling.left.color === BLACK) {
+                            console.log('rcase2')
                             sibling.color = RED;
                             node = node.parent;
                         } else {
+                            console.log('rcase3')
                             if (sibling.color === BLACK) {
                                 sibling.right.color = BLACK;
                                 sibling.color = RED;
                                 this._lRotate(sibling);
                                 sibling = node.parent.left;
                             }
-                            sibling.color = node.parent.color;
-                            node.parent.color = BLACK;
-                            this._rRotate(node.parent);
-                            node = this.root;
                         }
+                        console.log('rcase4')
+                        sibling.color = node.parent.color;
+                        node.parent.color = BLACK;
+                        this._rRotate(node.parent);
+                        node = this.root;
                     }
                 }
                 node.color = BLACK;
             }
             deleteBranchNoBalancing (key) {
                 let node = this.find(key);
-                console.log(node)
                 if (node.parent === this._nil) {
                     this.root = this._nil;
                 } else {
@@ -455,11 +457,10 @@
         }
         let sampleTree = new RBST();
         // build sample tree
-        generateSampleTree();
         function generateSampleTree() {
             sampleTree.root = sampleTree._nil;
             const sizeInput = document.getElementById('size-input').value;
-            const sizeOfTree =  parseInt(sizeInput) + 1 || 9;
+            const sizeOfTree =  sizeInput ? parseInt(sizeInput) + 1 : 9;
             // build the binary tree, push elements in
             for (let i = 0; i < sizeOfTree; i++) {
                 sampleTree.rbInsert(new RBTNode(i, null, 'val-' + i));
@@ -502,6 +503,7 @@
         }
 
         // controls
+        generateSampleTree();
         visualizeTree(sampleTree);
         document.getElementById('tree-gen').onclick = () => {
             clearAllTimeout(timeout);
@@ -530,7 +532,6 @@
             for (let key of keys) {
                 if (key) {
                     sampleTree.rbDelete(key)
-                    console.log(sampleTree)
                 }
             }
             visualizeTree(sampleTree);
